@@ -139,6 +139,30 @@ class StatisticsEvaluatorTests(unittest.TestCase):
 
         self.assertEqual(self.evaluator.evaluate(results), self.evaluator.evaluate(results))
 
+    def test_default_trend_field_preserves_bullish_statistics(self) -> None:
+        """The optional trend field leaves the existing Bullish default intact."""
+        results = _performance_results()
+        self.assertEqual(
+            self.evaluator.evaluate(results),
+            self.evaluator.evaluate(results, trend_column="DowntrendPassed"),
+        )
+
+    def test_bearish_schema_uses_uptrend_without_bullish_metadata(self) -> None:
+        """Bearish statistics require only its explicitly selected trend field."""
+        results = _performance_results().drop(
+            columns=[column for column in PERFORMANCE_COLUMNS if column.startswith("Downtrend")]
+        )
+        results["UptrendPassed"] = [True, True, True, False, True]
+        summary = self.evaluator.evaluate(results, trend_column="UptrendPassed")
+        self.assertEqual(summary["ValidPatterns"], 4)
+        self.assertNotIn("DowntrendPassed", results.columns)
+
+    def test_missing_selected_trend_field_fails_clearly(self) -> None:
+        """A strategy must supply the trend field it explicitly selected."""
+        results = _performance_results().drop(columns="DowntrendPassed")
+        with self.assertRaises(StatisticsInputError):
+            self.evaluator.evaluate(results)
+
 
 if __name__ == "__main__":
     unittest.main()

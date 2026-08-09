@@ -16,11 +16,17 @@ class StatisticsInputError(ValueError):
 class StatisticsEvaluator:
     """Aggregate Phase 8 trade-level metrics into one deterministic experiment summary."""
 
-    def evaluate(self, performance_results: pd.DataFrame) -> dict[str, Any]:
+    def evaluate(
+        self,
+        performance_results: pd.DataFrame,
+        trend_column: str = "DowntrendPassed",
+    ) -> dict[str, Any]:
         """Return the frozen Version 1 experiment-level statistics dictionary.
 
         Args:
             performance_results: Exact output from ``TradePerformanceEvaluator``.
+            trend_column: Trend qualification field; defaults to Bullish
+                ``DowntrendPassed`` so existing callers retain identical results.
 
         Returns:
             A dictionary containing exactly the specified experiment metrics,
@@ -30,11 +36,11 @@ class StatisticsEvaluator:
             StatisticsInputError: If required Phase 8 columns are missing or
                 duplicated.
         """
-        self._validate_input(performance_results)
+        self._validate_input(performance_results, trend_column)
         summary = self._summarize(performance_results)
         return {
             "TotalCandidatePatterns": int(len(performance_results)),
-            "ValidPatterns": int(performance_results["DowntrendPassed"].sum()),
+            "ValidPatterns": int(performance_results[trend_column].sum()),
             "ConfirmedPatterns": int(performance_results["ConfirmationPassed"].sum()),
             "TradeEligible": int(performance_results["TradeEligible"].sum()),
             "Wins": summary["wins"],
@@ -145,7 +151,7 @@ class StatisticsEvaluator:
         return ticker_results
 
     @staticmethod
-    def _validate_input(performance_results: pd.DataFrame) -> None:
+    def _validate_input(performance_results: pd.DataFrame, trend_column: str = "DowntrendPassed") -> None:
         """Require each Phase 8 output column exactly once.
 
         Args:
@@ -157,8 +163,13 @@ class StatisticsEvaluator:
         Raises:
             StatisticsInputError: If a Phase 8 column is missing or duplicated.
         """
-        missing_columns = [column for column in PERFORMANCE_COLUMNS if column not in performance_results.columns]
-        duplicate_columns = [column for column in PERFORMANCE_COLUMNS if (performance_results.columns == column).sum() > 1]
+        required_columns = tuple(
+            column
+            for column in PERFORMANCE_COLUMNS
+            if not column.startswith("Downtrend")
+        ) + (trend_column,)
+        missing_columns = [column for column in required_columns if column not in performance_results.columns]
+        duplicate_columns = [column for column in required_columns if (performance_results.columns == column).sum() > 1]
         if missing_columns or duplicate_columns:
             details: list[str] = []
             if missing_columns:
