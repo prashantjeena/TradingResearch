@@ -1,0 +1,1 @@
+{"provider": "yfinance", "interval": "5m", "requested_start": "2026-08-05 08:26:22.578475+05:30", "requested_end": "2026-08-10 08:26:22.578475+05:30", "retrieved_start": "2026-08-05 09:15:00+05:30", "retrieved_end": "2026-08-07 15:15:00+05:30", "timezone": "Asia/Kolkata", "PrototypeOnly": true}
