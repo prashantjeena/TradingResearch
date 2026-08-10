@@ -17,6 +17,7 @@ from config import (
     RISK_PER_TRADE_PERCENT,
     TICKER_UNIVERSE_FILES,
 )
+from data.ticker_universe import load_ticker_universes, load_tickers
 from data.providers.base_provider import MarketDataProvider, ProviderError
 from logging_config import configure_logging
 from pipeline.research_pipeline import PipelineError, ResearchPipeline
@@ -132,11 +133,7 @@ def _load_tickers(ticker_file_path: Path) -> tuple[str, ...]:
         OSError: If the ticker universe file cannot be read.
         UnicodeError: If the ticker universe file is not valid UTF-8 text.
     """
-    return tuple(
-        ticker
-        for line in ticker_file_path.read_text(encoding="utf-8").splitlines()
-        if (ticker := line.strip()) and not ticker.startswith("#")
-    )
+    return load_tickers(ticker_file_path)
 
 
 def _load_ticker_universes(
@@ -154,16 +151,7 @@ def _load_ticker_universes(
     Raises:
         None.
     """
-    records: list[dict[str, str]] = []
-    for universe, ticker_file_path in universe_files:
-        try:
-            tickers = _load_tickers(ticker_file_path)
-        except (OSError, UnicodeError) as error:
-            LOGGER.error("Could not load ticker file %s: %s", ticker_file_path, error)
-            continue
-        records.extend({"Ticker": ticker, "Universe": universe} for ticker in tickers)
-
-    return pd.DataFrame(records, columns=["Ticker", "Universe"])
+    return load_ticker_universes(universe_files)
 
 
 def _daily_signal_rows(

@@ -42,6 +42,17 @@ Bearish Engulfing results are isolated under:
 
 Raw OHLCV datasets remain shared in `datasets/`.
 
+## Intraday Research Watchlist
+
+```powershell
+py -m research.intraday_watchlist
+py -m research.intraday_watchlist --trading-date YYYY-MM-DD
+```
+
+This produces completed-daily-data candidate stocks only. It does **not**
+generate an entry, target, stop, or trade recommendation. Watchlists are
+written under `results/intraday_research/prototype/watchlists/`.
+
 ## Test commands
 
 ```powershell
